@@ -1,9 +1,9 @@
-import * as React from 'react';
+import React, { SFC } from 'react';
 import styled, { keyframes } from 'styled-components';
 import logo from '../logo.svg';
-import Game from './Game';
+import { Game } from './Game';
 
-export const App: React.FunctionComponent = () => (
+export const App: SFC = () => (
   <Wrapper>
     <Header>
       <Logo src={logo} alt="logo" />

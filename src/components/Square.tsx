@@ -1,4 +1,4 @@
-import * as React from 'react';
+import React, { SFC } from 'react';
 import styled from 'styled-components';
 
 interface Props {
@@ -6,7 +6,7 @@ interface Props {
   onClick: () => void;
 }
 
-export const Square: React.FunctionComponent<Props> = props => (
+export const Square: SFC<Props> = props => (
   <Button onClick={props.onClick}>{props.value}</Button>
 );
 

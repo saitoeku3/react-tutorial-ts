@@ -1,108 +1,40 @@
-import * as React from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Board } from './Board';
 import { SquareContent } from '../types';
 
-type Squares = {
-  squares: SquareContent[];
-};
+export const Game: FC = () => {
+  const [squares, setSquares] = useState(Array<SquareContent>(9).fill(''));
+  const [xIsNext, setXIxNext] = useState(true);
+  const [log, setLog] = useState('');
 
-interface State {
-  history: Squares[];
-  xIsNext: boolean;
-  stepNumber: number;
-}
-
-export default class Game extends React.Component<any, State> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      history: [
-        {
-          squares: Array(9).fill(''),
-        },
-      ],
-      xIsNext: true,
-      stepNumber: 0,
-    };
-  }
-
-  handleClick(i: number): void {
-    const history = this.state.history.slice(0, this.state.stepNumber + 1);
-    const current = history[history.length - 1];
-    const squares = current.squares.slice();
+  const handleClick = (i: number): void => {
+    const _squares = squares.slice();
+    _squares[i] = xIsNext ? 'X' : 'O';
 
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
 
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
+    setSquares(_squares);
+    setXIxNext(!xIsNext);
+  };
 
-    this.setState({
-      history: history.concat([
-        {
-          squares,
-        },
-      ]),
-      stepNumber: history.length,
-      xIsNext: !this.state.xIsNext,
-    });
-  }
+  useEffect(() => {
+    const winner = calculateWinner(squares);
+    const _log = winner
+      ? `Winner: ${winner}`
+      : `Next player: ${xIsNext ? 'X' : 'O'}`;
+    setLog(_log);
+  });
 
-  jumpTo(step: number): void {
-    this.setState({
-      stepNumber: step,
-      xIsNext: step % 2 === 0,
-    });
-  }
-
-  render() {
-    const history = this.state.history;
-    const current = history[this.state.stepNumber];
-    const winner = calculateWinner(current.squares);
-
-    const moves = history.map((step, move) => {
-      const desc = move ? `Go to move #${move}` : 'Go to game start';
-
-      return (
-        <li key={move}>
-          <button onClick={() => this.jumpTo(move)}>{desc}</button>
-        </li>
-      );
-    });
-
-    let status;
-    if (winner) {
-      status = `Winner: ${winner}`;
-    } else {
-      status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
-    }
-
-    return (
-      <Wrapper>
-        <Board
-          squares={current.squares}
-          onClick={(i: number) => this.handleClick(i)}
-        />
-        <Info>
-          <div>{status}</div>
-          <ol>{moves}</ol>
-        </Info>
-      </Wrapper>
-    );
-  }
-}
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  margin: 50px auto;
-  width: 80%;
-  max-width: 500px;
-  padding-left: 15%;
-`;
-
-const Info = styled.div``;
+  return (
+    <Wrapper>
+      <Board squares={squares} onClick={(i: number) => handleClick(i)} />
+      <Log>{log}</Log>
+    </Wrapper>
+  );
+};
 
 const calculateWinner = (squares: SquareContent[]): SquareContent | null => {
   const lines = [
@@ -125,3 +57,16 @@ const calculateWinner = (squares: SquareContent[]): SquareContent | null => {
 
   return null;
 };
+
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  margin: 50px auto;
+  width: 80%;
+  max-width: 500px;
+  padding-left: 15%;
+`;
+
+const Log = styled.div`
+  margin-left: 30px;
+`;
