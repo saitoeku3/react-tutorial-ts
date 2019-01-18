@@ -1,108 +1,73 @@
-import * as React from 'react';
+import React, { FC, useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { Board } from './Board';
 import { SquareContent } from '../types';
 
-type Squares = {
-  squares: SquareContent[];
-};
+export const Game: FC = () => {
+  const [xIsNext, setXIxNext] = useState(true);
+  const [log, setLog] = useState('');
+  const [history, setHistory] = useState([
+    { squares: Array<SquareContent>(9).fill('') },
+  ]);
+  const [stepNumber, setStepNumber] = useState(0);
 
-interface State {
-  history: Squares[];
-  xIsNext: boolean;
-  stepNumber: number;
-}
-
-export default class Game extends React.Component<any, State> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      history: [
-        {
-          squares: Array(9).fill(''),
-        },
-      ],
-      xIsNext: true,
-      stepNumber: 0,
-    };
-  }
-
-  handleClick(i: number): void {
-    const history = this.state.history.slice(0, this.state.stepNumber + 1);
-    const current = history[history.length - 1];
+  const handleClick = (i: number): void => {
+    const _history = history.slice(0, stepNumber + 1);
+    const current = _history[_history.length - 1];
     const squares = current.squares.slice();
 
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
 
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
+    squares[i] = xIsNext ? 'X' : 'O';
 
-    this.setState({
-      history: history.concat([
-        {
-          squares,
-        },
-      ]),
-      stepNumber: history.length,
-      xIsNext: !this.state.xIsNext,
-    });
-  }
+    setHistory(_history.concat([{ squares }]));
+    setXIxNext(!xIsNext);
+    setStepNumber(_history.length);
+  };
 
-  jumpTo(step: number): void {
-    this.setState({
-      stepNumber: step,
-      xIsNext: step % 2 === 0,
-    });
-  }
+  const jumpTo = (step: number) => {
+    setStepNumber(step);
+    setXIxNext(step % 2 === 0);
+  };
 
-  render() {
-    const history = this.state.history;
-    const current = history[this.state.stepNumber];
+  const moves = useMemo(
+    () => {
+      return history.map((step, move) => {
+        const desc = move ? `Go to move #${move}` : 'Go to game start';
+        return (
+          <li key={move}>
+            <button onClick={() => jumpTo(move)}>{desc}</button>
+          </li>
+        );
+      });
+    },
+    [history],
+  );
+
+  useEffect(() => {
+    const current = history[history.length - 1];
     const winner = calculateWinner(current.squares);
+    const _log = winner
+      ? `Winner: ${winner}`
+      : `Next player: ${xIsNext ? 'X' : 'O'}`;
+    setLog(_log);
+  });
 
-    const moves = history.map((step, move) => {
-      const desc = move ? `Go to move #${move}` : 'Go to game start';
-
-      return (
-        <li key={move}>
-          <button onClick={() => this.jumpTo(move)}>{desc}</button>
-        </li>
-      );
-    });
-
-    let status;
-    if (winner) {
-      status = `Winner: ${winner}`;
-    } else {
-      status = `Next player: ${this.state.xIsNext ? 'X' : 'O'}`;
-    }
-
-    return (
-      <Wrapper>
-        <Board
-          squares={current.squares}
-          onClick={(i: number) => this.handleClick(i)}
-        />
-        <Info>
-          <div>{status}</div>
-          <ol>{moves}</ol>
-        </Info>
-      </Wrapper>
-    );
-  }
-}
-
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: row;
-  margin: 50px auto;
-  width: 80%;
-  max-width: 500px;
-  padding-left: 15%;
-`;
-
-const Info = styled.div``;
+  return (
+    <Wrapper>
+      <Board
+        squares={history[stepNumber].squares}
+        onClick={(i: number) => handleClick(i)}
+      />
+      <Info>
+        {log}
+        <History>{moves}</History>
+      </Info>
+    </Wrapper>
+  );
+};
 
 const calculateWinner = (squares: SquareContent[]): SquareContent | null => {
   const lines = [
@@ -125,3 +90,20 @@ const calculateWinner = (squares: SquareContent[]): SquareContent | null => {
 
   return null;
 };
+
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: row;
+  margin: 50px auto;
+  width: 80%;
+  max-width: 500px;
+  padding-left: 15%;
+`;
+
+const Info = styled.div`
+  margin-left: 30px;
+`;
+
+const History = styled.ol`
+  margin-top: 10px;
+`;
