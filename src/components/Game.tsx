@@ -1,27 +1,54 @@
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
 import { Board } from './Board';
 import { SquareContent } from '../types';
 
 export const Game: FC = () => {
-  const [squares, setSquares] = useState(Array<SquareContent>(9).fill(''));
   const [xIsNext, setXIxNext] = useState(true);
   const [log, setLog] = useState('');
+  const [history, setHistory] = useState([
+    { squares: Array<SquareContent>(9).fill('') },
+  ]);
+  const [stepNumber, setStepNumber] = useState(0);
 
   const handleClick = (i: number): void => {
-    const _squares = squares.slice();
-    _squares[i] = xIsNext ? 'X' : 'O';
+    const _history = history.slice(0, stepNumber + 1);
+    const current = _history[_history.length - 1];
+    const squares = current.squares.slice();
 
     if (calculateWinner(squares) || squares[i]) {
       return;
     }
 
-    setSquares(_squares);
+    squares[i] = xIsNext ? 'X' : 'O';
+
+    setHistory(_history.concat([{ squares }]));
     setXIxNext(!xIsNext);
+    setStepNumber(_history.length);
   };
 
+  const jumpTo = (step: number) => {
+    setStepNumber(step);
+    setXIxNext(step % 2 === 0);
+  };
+
+  const moves = useMemo(
+    () => {
+      return history.map((step, move) => {
+        const desc = move ? `Go to move #${move}` : 'Go to game start';
+        return (
+          <li key={move}>
+            <button onClick={() => jumpTo(move)}>{desc}</button>
+          </li>
+        );
+      });
+    },
+    [history],
+  );
+
   useEffect(() => {
-    const winner = calculateWinner(squares);
+    const current = history[history.length - 1];
+    const winner = calculateWinner(current.squares);
     const _log = winner
       ? `Winner: ${winner}`
       : `Next player: ${xIsNext ? 'X' : 'O'}`;
@@ -30,8 +57,14 @@ export const Game: FC = () => {
 
   return (
     <Wrapper>
-      <Board squares={squares} onClick={(i: number) => handleClick(i)} />
-      <Log>{log}</Log>
+      <Board
+        squares={history[stepNumber].squares}
+        onClick={(i: number) => handleClick(i)}
+      />
+      <Info>
+        {log}
+        <History>{moves}</History>
+      </Info>
     </Wrapper>
   );
 };
@@ -67,6 +100,10 @@ const Wrapper = styled.div`
   padding-left: 15%;
 `;
 
-const Log = styled.div`
+const Info = styled.div`
   margin-left: 30px;
+`;
+
+const History = styled.ol`
+  margin-top: 10px;
 `;
